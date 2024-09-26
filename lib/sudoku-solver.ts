@@ -52,3 +52,21 @@ function isValid(board: number[][], row: number, col: number, num: number): bool
     return null // no valid solution for this cell
   }
   
+  export function findNextMove(board: number[][]): [number, number, number] | null {
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        if (board[row][col] === 0) {
+          for (let num = 1; num <= 9; num++) {
+            if (isValid(board, row, col, num)) {
+              const tempBoard = board.map(row => [...row])
+              tempBoard[row][col] = num
+              if (solveSudoku(tempBoard)) {
+                return [row, col, num]
+              }
+            }
+          }
+        }
+      }
+    }
+    return null
+  }

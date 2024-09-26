@@ -2,14 +2,17 @@ import React from 'react'
 
 export interface SudokuGridProps {
   board: number[][]
+  starterCells: boolean[][]
   onCellChange: (row: number, col: number, value: number) => void
   onCellSelect: (row: number, col: number) => void
   selectedCell: [number, number] | null
   invalidCells: [number, number][]
+  animatedCell: [number, number] | null
 }
 
-export function SudokuGrid({ board, onCellChange, onCellSelect, selectedCell, invalidCells }: SudokuGridProps) {
+export function SudokuGrid({ board, starterCells, onCellChange, onCellSelect, selectedCell, invalidCells, animatedCell }: SudokuGridProps) {
   const handleInputChange = (row: number, col: number, value: string) => {
+    if (starterCells[row][col]) return // Prevent changing starter cells
     const numValue = parseInt(value)
     if (!isNaN(numValue) && numValue >= 1 && numValue <= 9) {
       onCellChange(row, col, numValue)
@@ -36,6 +39,7 @@ export function SudokuGrid({ board, onCellChange, onCellSelect, selectedCell, in
             ${invalidCells.some(([r, c]) => r === rowIndex && c === colIndex) ? 'animate-shake bg-red-100' : ''}
             ${(rowIndex + 1) % 3 === 0 && rowIndex !== 8 ? 'border-b-2 border-b-gray-500' : ''}
             ${(colIndex + 1) % 3 === 0 && colIndex !== 8 ? 'border-r-2 border-r-gray-500' : ''}
+            ${animatedCell && animatedCell[0] === rowIndex && animatedCell[1] === colIndex ? 'animate-pulse bg-green-200' : ''}
           `}
           >
             <input
@@ -46,7 +50,10 @@ export function SudokuGrid({ board, onCellChange, onCellSelect, selectedCell, in
               value={cell || ''}
               onChange={(e) => handleInputChange(rowIndex, colIndex, e.target.value)}
               onClick={() => onCellSelect(rowIndex, colIndex)}
-              className="w-8 h-8 text-center border focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className={`w-8 h-8 text-center border focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${
+                starterCells[rowIndex][colIndex] ? 'text-black font-bold' : 'text-blue-600'
+              }`}
+              readOnly={starterCells[rowIndex][colIndex]}
             />
           </div>
         ))

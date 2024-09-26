@@ -3,12 +3,15 @@
 import { useState, useEffect } from 'react'
 import SudokuGrid from '@/components/sudoku-grid'
 import ControlPanel from '@/components/control-panel'
-import { solveSudoku, solveCell, isValidMove } from '@/lib/sudoku-solver'
+import { solveSudoku, solveCell, isValidMove, findNextMove } from '@/lib/sudoku-solver'
 
 export default function Home() {
   const [board, setBoard] = useState<number[][]>(Array(9).fill(null).map(() => Array(9).fill(0)))
+  const [starterCells, setStarterCells] = useState<boolean[][]>(Array(9).fill(null).map(() => Array(9).fill(false)))
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null)
   const [invalidCells, setInvalidCells] = useState<[number, number][]>([])
+  const [animatedCell, setAnimatedCell] = useState<[number, number] | null>(null)
+  const [isLocked, setIsLocked] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -50,15 +53,37 @@ export default function Home() {
       setInvalidCells([])
     } else {
       console.error("Puzzle is unsolvable")
-      // Highlight all cells as invalid
       setInvalidCells(board.flatMap((row, i) => row.map((_, j) => [i, j] as [number, number])))
     }
   }
 
   const handleReset = () => {
-    setBoard(Array(9).fill(null).map(() => Array(9).fill(0)))
+    setBoard(prevBoard => prevBoard.map((row, i) => row.map((cell, j) => isLocked && starterCells[i][j] ? cell : 0)))
     setSelectedCell(null)
     setInvalidCells([])
+  }
+
+  const handleShowNextMove = () => {
+    const nextMove = findNextMove(board)
+    if (nextMove) {
+      const [row, col, value] = nextMove
+      setAnimatedCell([row, col])
+      setTimeout(() => {
+        handleCellChange(row, col, value)
+        setAnimatedCell(null)
+      }, 1000)
+    }
+  }
+
+  const handleToggleLockStarterCells = () => {
+    if (isLocked) {
+      // Unlock: Reset all starter cells
+      setStarterCells(Array(9).fill(null).map(() => Array(9).fill(false)))
+    } else {
+      // Lock: Set starter cells based on current non-zero values
+      setStarterCells(board.map(row => row.map(cell => cell !== 0)))
+    }
+    setIsLocked(!isLocked)
   }
 
   return (
@@ -67,16 +92,21 @@ export default function Home() {
       <div className="flex flex-col items-center gap-8">
         <SudokuGrid 
           board={board} 
+          starterCells={starterCells}
           onCellChange={handleCellChange} 
           onCellSelect={handleCellSelect}
           selectedCell={selectedCell}
           invalidCells={invalidCells}
+          animatedCell={animatedCell}
         />
         <ControlPanel 
           onSolveCell={handleSolveCell} 
           onSolveAll={handleSolveAll} 
           onReset={handleReset} 
+          onShowNextMove={handleShowNextMove}
+          onToggleLockStarterCells={handleToggleLockStarterCells}
           isCellSelected={!!selectedCell}
+          isLocked={isLocked}
         />
       </div>
     </div>
